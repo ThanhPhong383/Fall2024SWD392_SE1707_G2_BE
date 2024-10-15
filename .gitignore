@@ -1,0 +1,8 @@
+.idea
+.env
+node_modules
+dist
+prisma-client
+yarn.lock
+coverage
+.vscode

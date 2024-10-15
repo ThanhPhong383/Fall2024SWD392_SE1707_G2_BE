@@ -1,0 +1,55 @@
+generator client {
+  provider        = "prisma-client-js"
+  output          = "../../prisma-client"
+  previewFeatures = ["omitApi"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("POSTGRES_URL")
+}
+
+model Users {
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  firstName    String?   @db.VarChar(100)
+  lastName     String?   @db.VarChar(100)
+  email        String    @unique @db.VarChar(150)
+  password     String?   @db.VarChar(255)
+  phone        String?   @db.VarChar(20)
+  dateOfBirth  DateTime? @db.Timestamptz(6)
+  address      String?   @db.VarChar(255)
+  isActive     Boolean   @default(true)
+  role         String    @db.VarChar(20)
+  refreshToken String?   @db.VarChar(255)
+  createdDate  DateTime? @db.Timestamptz(6)
+  updatedDate  DateTime? @db.Timestamptz(6)
+}
+model Products {
+  id          String   @id @default(uuid()) @db.Uuid
+  name        String   @db.VarChar(100)
+  description String   @db.Text
+  price       Decimal  @db.Decimal(15, 2)
+  category    String   @db.VarChar(50)
+  isAvailable Boolean  @default(true)
+  supplierId  String   @db.VarChar(36)
+  createdAt   DateTime @default(now())
+}
+model Orders {
+  id          String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId      String?    @db.Uuid  // Chỉ lưu userId nếu cần, không có quan hệ
+  totalAmount Decimal    @db.Decimal(15, 2)
+  status      String     @db.VarChar(20)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
+model OrderItem {
+  id          String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orderId     String    @db.Uuid  // Chỉ lưu orderId nếu cần, không có quan hệ
+  productId   String    @db.Uuid  // Chỉ lưu productId nếu cần, không có quan hệ
+  quantity    Int
+  price       Decimal   @db.Decimal(15, 2)
+  isRental    Boolean   @default(false)
+  rentalDuration Int?   // Áp dụng cho thuê, thời gian thuê
+  rentalReturnDate DateTime? @db.Timestamptz(6) // Ngày trả khi thuê
+}
