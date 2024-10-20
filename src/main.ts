@@ -25,7 +25,7 @@ async function bootstrap() {
   // Enable CORS
   app.enableCors({
     origin: [
-      'http://localhost:3000', // Local dev origin
+      'http://localhost:3001', // Local dev origin
       'https://fall2024-swd-392-se-1707-g2-fe.vercel.app', // Vercel frontend URL
     ],
     methods: 'GET, POST, PUT, PATCH, DELETE',
