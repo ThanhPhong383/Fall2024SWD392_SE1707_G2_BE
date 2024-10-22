@@ -34,16 +34,16 @@ export class AuthController {
   @Post('logout')
   @UseGuards(UserGuard)
   async logout(@Req() req: AuthenticatedRequest) {
-    const user = req.user;
-    return this.authService.logout(user['userId']);
+    const { userId } = req.user;
+    return this.authService.logout(userId);
   }
 
   @Post('refresh-token')
   @UseGuards(UserGuard, RolesGuard)
   @SetMetadata('roles', [Roles.User, Roles.Supplier])
   async refreshToken(@Req() req: AuthenticatedRequest) {
-    const user = req.user;
-    const refreshToken = req.body.refreshToken;
-    return this.authService.refreshToken(user['userId'], refreshToken);
+    const { userId } = req.user;
+    const { refreshToken } = req.body;
+    return this.authService.refreshToken(userId, refreshToken);
   }
 }

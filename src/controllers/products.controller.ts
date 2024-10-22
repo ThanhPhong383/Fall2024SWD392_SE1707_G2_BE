@@ -2,45 +2,38 @@ import {
   Controller,
   Get,
   Post,
-  Body,
   Param,
+  Body,
   Put,
   Delete,
   Req,
+  UseGuards,
   ForbiddenException,
   NotFoundException,
 } from '@nestjs/common';
-import { ApiTags, ApiResponse } from '@nestjs/swagger';
-import { CreateProductDto } from 'src/dto/products/create-product.dto';
-import { UpdateProductDto } from 'src/dto/products/update-product.dto';
-import { ProductsService } from 'src/services/products.service';
-import { AuthenticatedRequest } from 'src/types/express-request.interface';
+import { JwtAuthGuard } from '../configs/auth/strategy/jwt-auth.guard';
+import { ProductsService } from '../services/products.service';
+import { AuthenticatedRequest } from '../types/express-request.interface';
 
-@ApiTags('Products')
 @Controller('products')
 export class ProductsController {
   constructor(private readonly productsService: ProductsService) {}
 
-  @ApiResponse({ status: 201, description: 'Product created successfully.' })
+  @UseGuards(JwtAuthGuard)
   @Post()
-  async create(
-    @Body() createProductDto: CreateProductDto,
+  async createProduct(
+    @Body() productDto: any,
     @Req() req: AuthenticatedRequest,
   ) {
-    createProductDto.supplierId = req.user.userId; // Gắn supplierId từ user đã xác thực
-    return await this.productsService.create(createProductDto);
+    const { userId } = req.user;
+    return this.productsService.create(productDto, userId);
   }
 
-  @ApiResponse({
-    status: 200,
-    description: 'List of products retrieved successfully.',
-  })
   @Get()
   async findAll() {
-    return await this.productsService.findAll();
+    return this.productsService.findAll();
   }
 
-  @ApiResponse({ status: 200, description: 'Product retrieved successfully.' })
   @Get(':id')
   async findOne(@Param('id') id: string) {
     const product = await this.productsService.findOne(id);
@@ -50,43 +43,36 @@ export class ProductsController {
     return product;
   }
 
-  @ApiResponse({ status: 200, description: 'Product updated successfully.' })
+  @UseGuards(JwtAuthGuard)
   @Put(':id')
-  async update(
+  async updateProduct(
     @Param('id') id: string,
-    @Body() updateProductDto: UpdateProductDto,
+    @Body() productDto: any,
     @Req() req: AuthenticatedRequest,
   ) {
     const product = await this.productsService.findOne(id);
-
     if (!product) {
       throw new NotFoundException('Product not found');
     }
-
     if (product.supplierId !== req.user.userId) {
-      throw new ForbiddenException(
-        'You are not allowed to update this product',
-      );
+      throw new ForbiddenException('Unauthorized to update this product.');
     }
-
-    return await this.productsService.update(id, updateProductDto);
+    return this.productsService.update(id, productDto);
   }
 
-  @ApiResponse({ status: 200, description: 'Product deleted successfully.' })
+  @UseGuards(JwtAuthGuard)
   @Delete(':id')
-  async remove(@Param('id') id: string, @Req() req: AuthenticatedRequest) {
+  async removeProduct(
+    @Param('id') id: string,
+    @Req() req: AuthenticatedRequest,
+  ) {
     const product = await this.productsService.findOne(id);
-
     if (!product) {
       throw new NotFoundException('Product not found');
     }
-
     if (product.supplierId !== req.user.userId) {
-      throw new ForbiddenException(
-        'You are not allowed to delete this product',
-      );
+      throw new ForbiddenException('Unauthorized to delete this product.');
     }
-
-    return await this.productsService.remove(id);
+    return this.productsService.remove(id);
   }
 }

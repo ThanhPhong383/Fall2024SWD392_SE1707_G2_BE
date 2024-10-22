@@ -12,13 +12,15 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     });
   }
 
+  // Xác thực và kiểm tra payload của JWT
   async validate(payload: any) {
     if (!payload || !payload.sub) {
       throw new UnauthorizedException('Invalid JWT payload');
     }
 
+    // Trả về thông tin người dùng cho AuthenticatedRequest
     return {
-      userId: payload.sub, // Trả về userId cho sự nhất quán với giao diện AuthenticatedRequest
+      userId: payload.sub,
       email: payload.email,
       role: payload.role,
     };

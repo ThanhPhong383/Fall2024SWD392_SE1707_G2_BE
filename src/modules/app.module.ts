@@ -7,7 +7,6 @@ import { PrismaService } from '../system/database/prisma.service';
 import { AuthModule } from './auth.module';
 import { JwtStrategy } from '../configs/auth/strategy/jwt.strategy';
 import { OrderModule } from './order.module';
-import { RentalModule } from './rental.module';
 import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
@@ -16,13 +15,12 @@ import { ScheduleModule } from '@nestjs/schedule';
       isGlobal: true,
       envFilePath: '.env',
     }),
-    ScheduleModule.forRoot(),
+    ScheduleModule.forRoot(), // Định kỳ cho các tác vụ (như hủy đơn hàng)
     DatabaseModule,
     ProductsModule,
     UsersModule,
     AuthModule,
-    OrderModule,
-    RentalModule, // Ensure RentalModule is imported
+    OrderModule, // Đảm bảo OrderModule được import đầy đủ
   ],
   providers: [PrismaService, JwtStrategy],
   controllers: [],

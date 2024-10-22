@@ -40,8 +40,7 @@ export class UsersController {
   @Get(':id')
   @UseGuards(UserGuard)
   findOne(@Param('id') id: string, @Req() req: AuthenticatedRequest) {
-    const userId = req.user.userId;
-    if (id !== userId && req.user.role !== 'Admin') {
+    if (id !== req.user.userId && req.user.role !== 'Admin') {
       throw new ForbiddenException('Access denied!');
     }
     return this.usersService.findUserById(id);
@@ -59,20 +58,7 @@ export class UsersController {
     @Req() req: AuthenticatedRequest,
     @Body() updateUserDto: UpdateUserDto,
   ) {
-    const userId = req.user.userId;
-    return this.usersService.update(userId, updateUserDto);
-  }
-
-  @Patch(':id/switch-to-user')
-  @UseGuards(AdminGuard)
-  switchToUser(@Param('id') supplierId: string) {
-    return this.usersService.switchSupplierToUser(supplierId);
-  }
-
-  @Patch(':id/request-supplier')
-  @UseGuards(UserGuard)
-  requestSupplierRole(@Param('id') userId: string) {
-    return this.usersService.requestSupplierRole(userId);
+    return this.usersService.update(req.user.userId, updateUserDto);
   }
 
   @Delete(':id')

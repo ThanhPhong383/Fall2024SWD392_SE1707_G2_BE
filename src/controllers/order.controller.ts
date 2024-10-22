@@ -8,7 +8,6 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { CreateBuyOrderDto } from '../dto/order/create-buy-order.dto';
-import { CreateRentOrderDto } from '../dto/order/create-rent-order.dto';
 import { ApiTags, ApiResponse, ApiBody } from '@nestjs/swagger';
 import { OrderService } from 'src/services/order.service';
 
@@ -19,51 +18,23 @@ export class OrderController {
 
   @Post('buy')
   @ApiBody({ type: CreateBuyOrderDto })
-  @ApiResponse({ status: 201, description: 'Buy order successfully created.' })
-  @ApiResponse({ status: 400, description: 'Cannot buy unavailable item.' })
+  @ApiResponse({ status: 201, description: 'Order created successfully.' })
+  @ApiResponse({ status: 400, description: 'Product unavailable.' })
   async createBuyOrder(@Body() createBuyOrderDto: CreateBuyOrderDto) {
     try {
       const order = await this.orderService.createBuyOrder(createBuyOrderDto);
-      if (!createBuyOrderDto.userId) {
-        await this.orderService.holdOrderForCustomer(order.id);
-      }
-      return {
-        status: 201,
-        data: order,
-        message: 'Buy order successfully created.',
-      };
-    } catch (error) {
-      if (error instanceof Error) {
-        throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
-      }
-      throw new HttpException(
-        'Unexpected error',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
-    }
-  }
 
-  @Post('rent')
-  @ApiBody({ type: CreateRentOrderDto })
-  @ApiResponse({ status: 201, description: 'Rent order successfully created.' })
-  @ApiResponse({ status: 400, description: 'Cannot rent unavailable item.' })
-  async createRentOrder(@Body() createRentOrderDto: CreateRentOrderDto) {
-    try {
-      const order = await this.orderService.createRentOrder(createRentOrderDto);
-      if (!createRentOrderDto.userId) {
-        await this.orderService.holdOrderForCustomer(order.id);
+      if (!createBuyOrderDto.userId) {
+        await this.orderService.scheduleReminder(order.id);
       }
-      return {
-        status: 201,
-        data: order,
-        message: 'Rent order successfully created.',
-      };
-    } catch (error) {
+
+      return { status: 201, data: order };
+    } catch (error: unknown) {
       if (error instanceof Error) {
         throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
       }
       throw new HttpException(
-        'Unexpected error',
+        'Unexpected error.',
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
@@ -80,12 +51,12 @@ export class OrderController {
         status,
       );
       return { status: 200, data: updatedOrder };
-    } catch (error) {
+    } catch (error: unknown) {
       if (error instanceof Error) {
         throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
       }
       throw new HttpException(
-        'Unexpected error',
+        'Unexpected error.',
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
