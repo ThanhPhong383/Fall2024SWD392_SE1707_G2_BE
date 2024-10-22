@@ -26,4 +26,8 @@ export class ProductsService {
   async remove(id: string) {
     return this.productsRepository.deleteProduct(id);
   }
+
+  async disableProductsBySupplier(supplierId: string) {
+    return this.productsRepository.disableProductsBySupplier(supplierId);
+  }
 }

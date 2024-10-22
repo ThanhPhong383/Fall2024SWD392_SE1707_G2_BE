@@ -23,33 +23,41 @@ model Users {
   refreshToken String?   @db.VarChar(255)
   createdDate  DateTime? @db.Timestamptz(6)
   updatedDate  DateTime? @db.Timestamptz(6)
+  orders       Orders[]  @relation("UserOrders")
 }
+
 model Products {
-  id          String   @id @default(uuid()) @db.Uuid
-  name        String   @db.VarChar(100)
-  description String   @db.Text
-  price       Decimal  @db.Decimal(15, 2)
-  category    String   @db.VarChar(50)
-  isAvailable Boolean  @default(true)
-  supplierId  String   @db.VarChar(36)
-  createdAt   DateTime @default(now())
+  id          String      @id @default(uuid()) @db.Uuid
+  name        String      @db.VarChar(100)
+  description String
+  price       Decimal     @db.Decimal(15, 2)
+  category    String      @db.VarChar(50)
+  isAvailable Boolean     @default(true)
+  supplierId  String      @db.VarChar(36)
+  createdAt   DateTime    @default(now())
+  orderItems  OrderItem[] @relation("ProductItems")
 }
+
 model Orders {
   id          String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  userId      String?    @db.Uuid  // Chỉ lưu userId nếu cần, không có quan hệ
-  totalAmount Decimal    @db.Decimal(15, 2)
-  status      String     @db.VarChar(20)
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
+  userId      String?     @db.Uuid
+  totalAmount Decimal     @db.Decimal(15, 2)
+  status      String      @db.VarChar(20)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  items       OrderItem[] @relation("OrderItems")
+  user        Users?      @relation("UserOrders", fields: [userId], references: [id])
 }
 
 model OrderItem {
-  id          String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  orderId     String    @db.Uuid  // Chỉ lưu orderId nếu cần, không có quan hệ
-  productId   String    @db.Uuid  // Chỉ lưu productId nếu cần, không có quan hệ
-  quantity    Int
-  price       Decimal   @db.Decimal(15, 2)
-  isRental    Boolean   @default(false)
-  rentalDuration Int?   // Áp dụng cho thuê, thời gian thuê
-  rentalReturnDate DateTime? @db.Timestamptz(6) // Ngày trả khi thuê
+  id               String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  orderId          String    @db.Uuid
+  productId        String    @db.Uuid
+  quantity         Int
+  price            Decimal   @db.Decimal(15, 2)
+  isRental         Boolean   @default(false)
+  rentalDuration   Int?
+  rentalReturnDate DateTime? @db.Timestamptz(6)
+  order            Orders    @relation("OrderItems", fields: [orderId], references: [id])
+  product          Products  @relation("ProductItems", fields: [productId], references: [id])
 }

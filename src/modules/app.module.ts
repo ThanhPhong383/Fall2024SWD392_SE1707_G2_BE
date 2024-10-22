@@ -5,23 +5,24 @@ import { DatabaseModule } from '../system/database/database.module';
 import { UsersModule } from './users.module';
 import { PrismaService } from '../system/database/prisma.service';
 import { AuthModule } from './auth.module';
-import { JwtStrategy } from 'src/configs/auth/strategy/jwt.strategy';
+import { JwtStrategy } from '../configs/auth/strategy/jwt.strategy';
 import { OrderModule } from './order.module';
+import { RentalModule } from './rental.module';
+import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
-      isGlobal: true, // Make ConfigModule available globally
-      envFilePath: '.env', // Path to the .env file
+      isGlobal: true,
+      envFilePath: '.env',
     }),
+    ScheduleModule.forRoot(),
     DatabaseModule,
-    ProductsModule, // Ensure ProductsModule is imported
+    ProductsModule,
     UsersModule,
     AuthModule,
     OrderModule,
-    ConfigModule.forRoot({
-      isGlobal: true,
-    }),
+    RentalModule, // Ensure RentalModule is imported
   ],
   providers: [PrismaService, JwtStrategy],
   controllers: [],

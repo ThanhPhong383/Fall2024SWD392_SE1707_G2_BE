@@ -1,20 +1,19 @@
 /* eslint-disable prettier/prettier */
 import { IsString, IsNumber } from 'class-validator';
 
-export class CreateRentOrderDto 
-{
+export class CreateRentOrderDto {
   @IsString()
-productId: string;
-@IsNumber()
+  productId!: string; // Non-null assertion
 
-rentalDuration: number; // Thời gian thuê (ngày, tuần, hoặc tháng)
-@IsNumber()
+  @IsNumber()
+  rentalDuration!: number; // Non-null assertion
 
-rentalPrice: number;
-@IsNumber()
+  @IsNumber()
+  rentalPrice!: number;
 
-quantity: number;
-@IsString()
+  @IsNumber()
+  quantity!: number;
 
-userId: string;
+  @IsString()
+  userId!: string;
 }

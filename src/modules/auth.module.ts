@@ -19,11 +19,7 @@ import { AuthController } from 'src/controllers/auth.controller';
     forwardRef(() => UsersModule),
     ConfigModule,
   ],
-  providers: [
-    AuthService,
-    JwtStrategy,
-    PrismaService
-  ],
+  providers: [AuthService, JwtStrategy, PrismaService],
   controllers: [AuthController],
   exports: [AuthService],
 })

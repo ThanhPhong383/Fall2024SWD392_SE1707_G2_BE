@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
+import { PrismaService } from 'src/system/database/prisma.service';
 import { CreateProductDto } from 'src/dto/products/create-product.dto';
 import { UpdateProductDto } from 'src/dto/products/update-product.dto';
-import { PrismaService } from 'src/system/database/prisma.service';
 
 @Injectable()
 export class ProductsRepository {
@@ -33,6 +33,14 @@ export class ProductsRepository {
   async deleteProduct(id: string) {
     return this.prismaService.products.delete({
       where: { id },
+    });
+  }
+
+  // Vô hiệu hóa tất cả sản phẩm của một Supplier
+  async disableProductsBySupplier(supplierId: string) {
+    return this.prismaService.products.updateMany({
+      where: { supplierId },
+      data: { isAvailable: false },
     });
   }
 }

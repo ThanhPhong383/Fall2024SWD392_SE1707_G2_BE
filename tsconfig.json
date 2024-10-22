@@ -6,21 +6,26 @@
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
     "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true, // Bổ sung để hỗ trợ import đúng cách
     "target": "ES2021",
     "sourceMap": true,
     "outDir": "./dist",
     "baseUrl": "./",
     "incremental": true,
     "skipLibCheck": true,
-    "strictNullChecks": false,
+    "strict": true, // Bật chế độ kiểm tra chặt chẽ
     "noImplicitAny": false,
-    "strictBindCallApply": false,
-    "forceConsistentCasingInFileNames": false,
-    "noFallthroughCasesInSwitch": false,
+    "strictNullChecks": true, // Khuyến nghị bật để tránh lỗi null/undefined
+    "strictBindCallApply": true,
+    "forceConsistentCasingInFileNames": true,
+    "noFallthroughCasesInSwitch": true,
+    "resolveJsonModule": true, // Hỗ trợ import tệp JSON
     "plugins": [
       {
         "transform": "typia/lib/transform"
       }
     ]
-  }
+  },
+  "include": ["src/**/*.ts"], // Đảm bảo bao gồm tất cả các tệp TypeScript
+  "exclude": ["node_modules", "dist"] // Loại trừ thư mục không cần thiết
 }

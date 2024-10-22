@@ -4,7 +4,6 @@ import { Users } from 'prisma-client';
 import { CreateUserDto } from 'src/dto/users/create-user.dto';
 import { PrismaService } from 'src/system/database/prisma.service';
 
-
 @Injectable()
 export class UsersRepository {
   constructor(private readonly prismaService: PrismaService) {}
@@ -42,7 +41,10 @@ export class UsersRepository {
     });
   }
 
-  async updateRefreshToken(id: string, refreshToken: string | null): Promise<Users> {
+  async updateRefreshToken(
+    id: string,
+    refreshToken: string | null,
+  ): Promise<Users> {
     return this.prismaService.users.update({
       where: { id },
       data: { refreshToken },
@@ -52,7 +54,18 @@ export class UsersRepository {
   async updatePassword(id: string, hashedPassword: string): Promise<void> {
     await this.prismaService.users.update({
       where: { id },
-      data: { password: hashedPassword }
+      data: { password: hashedPassword },
     });
+  }
+
+  // Kiểm tra xem user có đơn hàng chờ xử lý không
+  async hasPendingOrders(userId: string): Promise<boolean> {
+    const pendingOrders = await this.prismaService.orders.findMany({
+      where: {
+        userId,
+        status: 'Pending',
+      },
+    });
+    return pendingOrders.length > 0;
   }
 }

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 
@@ -8,11 +8,19 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
-      secretOrKey: process.env.JWT_SECRET,
+      secretOrKey: process.env.JWT_SECRET || 'defaultSecret',
     });
   }
 
   async validate(payload: any) {
-    return { userId: payload.userId, email: payload.email };
+    if (!payload || !payload.sub) {
+      throw new UnauthorizedException('Invalid JWT payload');
+    }
+
+    return {
+      userId: payload.sub, // Trả về userId cho sự nhất quán với giao diện AuthenticatedRequest
+      email: payload.email,
+      role: payload.role,
+    };
   }
 }

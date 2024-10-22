@@ -1,6 +1,6 @@
 export class CreateBuyOrderDto {
-  productId: string;
-  quantity: number;
-  price: number;
-  userId: string;
+  productId!: string; // Non-null assertion
+  quantity!: number;
+  price!: number;
+  userId!: string;
 }

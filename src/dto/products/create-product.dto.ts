@@ -2,21 +2,21 @@ import { IsString, IsNumber, IsOptional, IsBoolean } from 'class-validator';
 
 export class CreateProductDto {
   @IsString()
-  name: string;
+  name!: string; // Non-null assertion
 
   @IsString()
-  description: string;
+  description!: string;
 
   @IsNumber()
-  price: number;
+  price!: number;
 
   @IsString()
-  category: string;
+  category!: string;
 
-  @IsBoolean()
   @IsOptional()
-  isAvailable?: boolean = true;
+  @IsBoolean()
+  isAvailable: boolean = true; // Không dùng dấu `?`
 
   @IsString()
-  supplierId: string; // Supplier or manufacturer reference
+  supplierId!: string; // Non-null assertion nếu là bắt buộc
 }

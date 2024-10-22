@@ -1,105 +1,96 @@
-/* eslint-disable prettier/prettier */
-import { Injectable } from '@nestjs/common';
-
-import * as bcrypt from 'bcryptjs';
-import { Users } from 'prisma-client';
-import { apiFailed, apiSuccess } from 'src/dto/api-response';
-import { ChangePasswordDto } from 'src/dto/users/change-password.dto';
+import {
+  Injectable,
+  ForbiddenException,
+  NotFoundException,
+} from '@nestjs/common';
+import { UsersRepository } from 'src/repositories/users.repository';
+import { ProductsRepository } from 'src/repositories/products.repository';
 import { CreateUserDto } from 'src/dto/users/create-user.dto';
 import { UpdateUserDto } from 'src/dto/users/update-user.dto';
-import { UsersRepository } from 'src/repositories/users.repository';
 
 @Injectable()
 export class UsersService {
-  constructor(private readonly usersRepository: UsersRepository) {}
+  constructor(
+    private readonly usersRepository: UsersRepository,
+    private readonly productsRepository: ProductsRepository,
+  ) {}
 
+  // Tạo tài khoản người dùng mới
   async create(createUserDto: CreateUserDto) {
-    try {
-      if (!createUserDto?.email) {
-        throw apiFailed(400, null, 'Email not found!');
-      }
-      const createdUser = await this.usersRepository.createUser({ ...createUserDto });
-      return apiSuccess(201, createdUser, 'User create successfully.');
-    } catch (error) {
-      if (error.statusCode) {
-        throw error;
-      }
-      throw apiFailed(500, null, error.meta?.message || error.message);
-    }
+    const createdUser = await this.usersRepository.createUser(createUserDto);
+    return { message: 'User created successfully.', data: createdUser };
   }
 
+  // Lấy danh sách tất cả người dùng
   async findAllUsers() {
-    try {
-      const listUsers = await this.usersRepository.findAllUsers();
-      return apiSuccess(200, listUsers, 'Find users successfully.');
-    } catch (error) {
-      if (error.statusCode) {
-        throw error;
-      }
-      throw apiFailed(500, null, error.meta?.message || error.message);
-    }
+    const users = await this.usersRepository.findAllUsers();
+    return { message: 'Users retrieved successfully.', data: users };
   }
 
-  async findUserById(id: string){
-    try {
-      const user = await this.usersRepository.findUserById(id);
-      return apiSuccess(200, user, 'Find user successfully.');
-    } catch (error) {
-      if (error.statusCode) {
-        throw error;
-      }
-      throw apiFailed(500, null, error.meta?.message || error.message);
+  // Lấy người dùng theo ID
+  async findUserById(id: string) {
+    const user = await this.usersRepository.findUserById(id);
+    if (!user) {
+      throw new NotFoundException('User not found.');
     }
+    return { message: 'User retrieved successfully.', data: user };
   }
 
-  async update(updateUserDto: UpdateUserDto) {
-    const { id, email, ...updatedData } = updateUserDto;
-    try {
-      const existingUser = await this.usersRepository.findUserByEmail(email);
-
-      if (existingUser && existingUser.id !== id) {
-        throw apiFailed(400, null, 'Email existed!');
-      }
-
-      const updatedUserData = await this.usersRepository.updateUser(id, updatedData);
-
-      return apiSuccess(200, updatedUserData, 'User update successfully.');
-    } catch (error) {
-      if (error.statusCode) {
-        throw error;
-      }
-      throw apiFailed(500, null, error.meta?.message || error.message);
+  // Cập nhật thông tin người dùng
+  async update(userId: string, updateUserDto: UpdateUserDto) {
+    const user = await this.usersRepository.findUserById(userId);
+    if (!user) {
+      throw new NotFoundException('User not found.');
     }
+    const updatedUser = await this.usersRepository.updateUser(
+      userId,
+      updateUserDto,
+    );
+    return { message: 'User updated successfully.', data: updatedUser };
   }
 
-  async remove(id: string): Promise<Users> {
-    return this.usersRepository.deleteUser(id);
+  // Xóa người dùng
+  async remove(userId: string) {
+    const user = await this.usersRepository.findUserById(userId);
+    if (!user) {
+      throw new NotFoundException('User not found.');
+    }
+    await this.usersRepository.deleteUser(userId);
+    return { message: 'User deleted successfully.' };
   }
 
-  async changePassword(userId: string, changePasswordDto: ChangePasswordDto) {
-    try {
-      const { oldPassword, newPassword } = changePasswordDto;
-      const user = await this.usersRepository.findUserById(userId);
-      if (!user) {
-        throw apiFailed(400, null, 'User not found!');
-      }
-
-      const isOldPasswordValid = await bcrypt.compare(oldPassword, user.password);
-      if (!isOldPasswordValid) {
-        throw apiFailed(400, null, 'Old password is incorrect!');
-      }
-
-      const hashedNewPassword = await bcrypt.hash(newPassword, 10);
-
-      // Update the user's password in the database
-      await this.usersRepository.updatePassword(userId, hashedNewPassword);
-
-      return apiSuccess(200, null, 'Password changed successfully.');
-    } catch (error) {
-      if (error.statusCode) {
-        throw error;
-      }
-      throw apiFailed(500, null, error.meta?.message || error.message);
+  // Chuyển Supplier sang User và vô hiệu hóa sản phẩm của họ
+  async switchSupplierToUser(supplierId: string) {
+    const user = await this.usersRepository.findUserById(supplierId);
+    if (!user) {
+      throw new NotFoundException('Supplier not found.');
     }
+    await this.productsRepository.disableProductsBySupplier(supplierId);
+    const updatedUser = await this.usersRepository.updateUser(supplierId, {
+      role: 'User',
+    });
+    return {
+      message: 'Supplier switched to User successfully.',
+      data: updatedUser,
+    };
+  }
+
+  // Yêu cầu chuyển sang Supplier
+  async requestSupplierRole(userId: string) {
+    const user = await this.usersRepository.findUserById(userId);
+    if (!user) {
+      throw new NotFoundException('User not found.');
+    }
+    if (user.role === 'Supplier') {
+      throw new ForbiddenException('User is already a supplier.');
+    }
+    const hasPendingOrders =
+      await this.usersRepository.hasPendingOrders(userId);
+    if (hasPendingOrders) {
+      throw new ForbiddenException(
+        'Cannot switch role while having pending orders.',
+      );
+    }
+    return { message: 'Supplier role requested. Waiting for Admin approval.' };
   }
 }

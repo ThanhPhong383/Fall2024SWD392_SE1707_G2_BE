@@ -4,8 +4,8 @@ import { IsEmail, IsNotEmpty, IsString } from 'class-validator';
 export class LoginDto {
   @IsEmail()
   @IsNotEmpty({ message: 'Email should not be empty' })
-  email: Email;
+  email!: Email; // Non-null assertion
 
   @IsString()
-  password: string;
+  password!: string; // Non-null assertion
 }
