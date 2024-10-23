@@ -15,17 +15,18 @@ import {
 import { JwtAuthGuard } from '../configs/auth/strategy/jwt-auth.guard';
 import { ProductsService } from '../services/products.service';
 import { AuthenticatedRequest } from '../types/express-request.interface';
-import { ApiTags, ApiQuery, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { ApiTags, ApiBearerAuth, ApiQuery, ApiResponse } from '@nestjs/swagger';
 
-@ApiTags('Products') // Gắn tag cho Swagger
+@ApiTags('Products') // Swagger API tag để nhóm các endpoint
+@ApiBearerAuth() // Đánh dấu API này cần xác thực bằng Bearer token
 @Controller('products')
 export class ProductsController {
   constructor(private readonly productsService: ProductsService) {}
 
   @UseGuards(JwtAuthGuard)
   @Post()
-  @ApiOperation({ summary: 'Create a new product' }) // Mô tả cho Swagger
-  @ApiResponse({ status: 201, description: 'Product successfully created.' })
+  @ApiResponse({ status: 201, description: 'Product created successfully.' })
+  @ApiResponse({ status: 403, description: 'Unauthorized.' })
   async createProduct(
     @Body() productDto: any,
     @Req() req: AuthenticatedRequest,
@@ -35,15 +36,13 @@ export class ProductsController {
   }
 
   @Get()
-  @ApiOperation({ summary: 'Retrieve all products' })
   @ApiResponse({ status: 200, description: 'List of all products.' })
   async findAll() {
     return this.productsService.findAll();
   }
 
   @Get(':id')
-  @ApiOperation({ summary: 'Retrieve a product by ID' })
-  @ApiResponse({ status: 200, description: 'Product found.' })
+  @ApiResponse({ status: 200, description: 'Product retrieved successfully.' })
   @ApiResponse({ status: 404, description: 'Product not found.' })
   async findOne(@Param('id') id: string) {
     const product = await this.productsService.findOne(id);
@@ -55,10 +54,9 @@ export class ProductsController {
 
   @UseGuards(JwtAuthGuard)
   @Put(':id')
-  @ApiOperation({ summary: 'Update a product by ID' })
-  @ApiResponse({ status: 200, description: 'Product successfully updated.' })
+  @ApiResponse({ status: 200, description: 'Product updated successfully.' })
+  @ApiResponse({ status: 403, description: 'Unauthorized.' })
   @ApiResponse({ status: 404, description: 'Product not found.' })
-  @ApiResponse({ status: 403, description: 'Unauthorized to update.' })
   async updateProduct(
     @Param('id') id: string,
     @Body() productDto: any,
@@ -76,10 +74,9 @@ export class ProductsController {
 
   @UseGuards(JwtAuthGuard)
   @Delete(':id')
-  @ApiOperation({ summary: 'Delete a product by ID' })
-  @ApiResponse({ status: 200, description: 'Product successfully deleted.' })
+  @ApiResponse({ status: 200, description: 'Product deleted successfully.' })
+  @ApiResponse({ status: 403, description: 'Unauthorized.' })
   @ApiResponse({ status: 404, description: 'Product not found.' })
-  @ApiResponse({ status: 403, description: 'Unauthorized to delete.' })
   async removeProduct(
     @Param('id') id: string,
     @Req() req: AuthenticatedRequest,
@@ -95,14 +92,16 @@ export class ProductsController {
   }
 
   @Get('search')
-  @ApiOperation({ summary: 'Search products by name' }) // Swagger mô tả endpoint
   @ApiQuery({
     name: 'name',
     required: true,
-    description: 'The name of the product to search for',
-  }) // Định nghĩa query parameter cho Swagger
-  @ApiResponse({ status: 200, description: 'Products found.' })
-  @ApiResponse({ status: 404, description: 'No products found.' })
+    description: 'Product name to search for',
+  })
+  @ApiResponse({ status: 200, description: 'Product(s) found.' })
+  @ApiResponse({
+    status: 404,
+    description: 'No products found with the given name.',
+  })
   async searchProductByName(@Query('name') name: string) {
     if (!name) {
       throw new NotFoundException('Product name query is required');
