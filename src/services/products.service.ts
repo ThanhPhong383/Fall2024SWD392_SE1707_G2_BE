@@ -47,4 +47,9 @@ export class ProductsService {
   async disableProductsBySupplier(supplierId: string) {
     return this.productsRepository.disableProductsBySupplier(supplierId);
   }
+  // src/services/products.service.ts
+
+  async findByName(name: string) {
+    return this.productsRepository.findProductByName(name);
+  }
 }

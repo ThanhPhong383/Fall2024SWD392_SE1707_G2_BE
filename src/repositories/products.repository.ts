@@ -46,4 +46,14 @@ export class ProductsRepository {
       data: { isAvailable: false },
     });
   }
+  async findProductByName(name: string) {
+    return this.prismaService.products.findMany({
+      where: {
+        name: {
+          contains: name, // Tìm kiếm theo từ khóa, không phân biệt hoa thường
+          mode: 'insensitive',
+        },
+      },
+    });
+  }
 }
