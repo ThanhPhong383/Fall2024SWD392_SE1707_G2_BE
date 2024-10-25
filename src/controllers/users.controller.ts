@@ -31,7 +31,15 @@ import { AuthenticatedRequest } from 'src/types/express-request.interface';
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
-
+  @Get('/')
+  @ApiOperation({ summary: 'Root route for health check' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Service is live!',
+  })
+  getRoot() {
+    return { message: 'Welcome to the NestJS API! Your service is live 🎉' };
+  }
   // Đăng ký từ Customer thành User
   @Post('register')
   @ApiOperation({ summary: 'Register a new user' })

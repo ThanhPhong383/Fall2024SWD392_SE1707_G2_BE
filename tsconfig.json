@@ -26,6 +26,6 @@
       }
     ]
   },
-  "include": ["src/**/*.ts"], // Đảm bảo bao gồm tất cả các tệp TypeScript
+  "include": ["src/**/*.ts","src", "test/**/*.ts"], // Thêm thư mục test  // Đảm bảo bao gồm tất cả các tệp TypeScript 
   "exclude": ["node_modules", "dist"] // Loại trừ thư mục không cần thiết
 }

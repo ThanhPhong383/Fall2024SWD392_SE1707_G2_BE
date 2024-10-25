@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
-import * as request from 'supertest';
+import request from 'supertest'; // Default import được sử dụng đúng cách
 import { AppModule } from '../src/modules/app.module';
 
 describe('AppController (e2e)', () => {

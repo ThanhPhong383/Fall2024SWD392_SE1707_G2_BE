@@ -1,10 +1,10 @@
 /* eslint-disable prettier/prettier */
-import { Injectable, UnauthorizedException, Logger } from '@nestjs/common';
+import { Injectable, UnauthorizedException, Logger, HttpException, HttpStatus } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
 import { LoginDto } from '../dto/auth/login.dto';
 import { RegisterDto } from '../dto/auth/register.dto';
-import { apiFailed, apiSuccess } from 'src/dto/api-response';
+import { apiSuccess } from 'src/dto/api-response';
 import { ConfigService } from '@nestjs/config';
 import { UsersRepository } from 'src/repositories/users.repository';
 import { Roles } from '../types/roles.enum';
@@ -21,82 +21,66 @@ export class AuthService {
 
   // Đăng ký tài khoản mới
   async register(registerDto: RegisterDto) {
-    const { email, password, firstName, lastName, role } = registerDto;
-
-    if (![Roles.User, Roles.Supplier].includes(role)) {
-      throw apiFailed(400, null, 'Invalid role! Must be User or Supplier.');
-    }
-
-    const existingUser = await this.usersRepository.findUserByEmail(email);
-    if (existingUser) {
-      throw apiFailed(400, null, 'Email already exists!');
-    }
-
-    const hashedPassword = await bcrypt.hash(password, 10);
-    await this.usersRepository.createUser({
-      email,
-      password: hashedPassword,
-      firstName,
-      lastName,
-      role,
-      isActive: true,
-      createdDate: new Date().toISOString(),
-    });
-
-    return apiSuccess(201, null, 'User registered successfully.');
-  }
-
-  // Đăng nhập
-  async login(loginDto: LoginDto) {
-    const { email, password } = loginDto;
-
-    const user = await this.usersRepository.findUserByEmail(email);
-    if (!user || !user.password) {
-      throw apiFailed(401, null, 'Invalid credentials.');
-    }
-
-    const isPasswordValid = await bcrypt.compare(password, user.password);
-    if (!isPasswordValid) {
-      throw apiFailed(401, null, 'Invalid credentials.');
-    }
-
-    const tokens = await this.generateTokens(user.id, user.email, user.role);
-    await this.usersRepository.updateRefreshToken(user.id, tokens.refreshToken);
-
-    return apiSuccess(200, tokens, 'Login successful.');
-  }
-
-  // Xác minh token của Admin
-  async verifyAdminToken(token: string) {
     try {
-      const decoded = this.jwtService.verify(token);
-      if (decoded.role !== 'Admin') {
-        throw new UnauthorizedException('Invalid admin token.');
+      const { email, password, firstName, lastName, role } = registerDto;
+
+      if (![Roles.User, Roles.Supplier].includes(role)) {
+        throw new HttpException('Invalid role! Must be User or Supplier.', HttpStatus.BAD_REQUEST);
       }
-      return decoded;
-    } catch (error) {
-      const err = error as Error; // Ép kiểu 'unknown' thành Error
-      this.logger.error(`Token verification failed: ${err.message}`);
-      throw new UnauthorizedException('Invalid token.');
+
+      const existingUser = await this.usersRepository.findUserByEmail(email);
+      if (existingUser) {
+        throw new HttpException('Email already exists!', HttpStatus.BAD_REQUEST);
+      }
+
+      const hashedPassword = await bcrypt.hash(password, 10);
+      await this.usersRepository.createUser({
+        email,
+        password: hashedPassword,
+        firstName,
+        lastName,
+        role,
+        isActive: true,
+        createdDate: new Date().toISOString(),
+      });
+
+      return apiSuccess(201, null, 'User registered successfully.');
+    } catch (error: unknown) {
+      this.logger.error(`Registration failed: ${(error as Error).message}`);
+      throw new HttpException('Registration failed.', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 
-  // Xác minh token của User
-  async verifyToken(token: string) {
+  // Đăng nhập người dùng
+  async login(loginDto: LoginDto) {
     try {
-      return this.jwtService.verify(token);
-    } catch (error) {
-      const err = error as Error; // Ép kiểu 'unknown' thành Error
-      this.logger.error(`Token verification failed: ${err.message}`);
-      throw new UnauthorizedException('Invalid token.');
+      const { email, password } = loginDto;
+
+      const user = await this.usersRepository.findUserByEmail(email);
+      if (!user || !user.password) {
+        throw new UnauthorizedException('Invalid credentials.');
+      }
+
+      const isPasswordValid = await bcrypt.compare(password, user.password);
+      if (!isPasswordValid) {
+        throw new UnauthorizedException('Invalid credentials.');
+      }
+
+      const tokens = await this.generateTokens(user.id, user.email, user.role);
+      await this.usersRepository.updateRefreshToken(user.id, tokens.refreshToken);
+
+      return apiSuccess(200, tokens, 'Login successful.');
+    } catch (error: unknown) {
+      this.logger.error(`Login failed: ${(error as Error).message}`);
+      throw new HttpException('Login failed.', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 
-  // Tạo token
+  // Tạo JWT Tokens
   private async generateTokens(userId: string, email: string, role: string) {
     const accessToken = this.jwtService.sign(
       { userId, email, role },
-      { expiresIn: '15m' },
+      { expiresIn: this.config.get<string>('JWT_EXPIRES_IN') || '15m' },
     );
 
     const refreshToken = this.jwtService.sign(
@@ -110,28 +94,69 @@ export class AuthService {
 
   // Làm mới token
   async refreshToken(userId: string, refreshToken: string) {
-    const user = await this.usersRepository.findUserById(userId);
-    if (!user || !user.refreshToken) {
-      throw apiFailed(401, null, 'Invalid refresh token.');
+    try {
+      const user = await this.usersRepository.findUserById(userId);
+      if (!user || !user.refreshToken) {
+        throw new UnauthorizedException('Invalid refresh token.');
+      }
+
+      const isRefreshTokenValid = await bcrypt.compare(refreshToken, user.refreshToken);
+      if (!isRefreshTokenValid) {
+        throw new UnauthorizedException('Invalid refresh token.');
+      }
+
+      const tokens = await this.generateTokens(user.id, user.email, user.role);
+      await this.usersRepository.updateRefreshToken(user.id, tokens.refreshToken);
+
+      return apiSuccess(200, tokens, 'Token refreshed successfully.');
+    } catch (error: unknown) {
+      this.logger.error(`Token refresh failed: ${(error as Error).message}`);
+      throw new HttpException('Failed to refresh token.', HttpStatus.INTERNAL_SERVER_ERROR);
     }
-
-    const isRefreshTokenValid = await bcrypt.compare(
-      refreshToken,
-      user.refreshToken,
-    );
-    if (!isRefreshTokenValid) {
-      throw apiFailed(401, null, 'Invalid refresh token.');
-    }
-
-    const tokens = await this.generateTokens(user.id, user.email, user.role);
-    await this.usersRepository.updateRefreshToken(user.id, tokens.refreshToken);
-
-    return apiSuccess(200, tokens, 'Token refreshed successfully.');
   }
 
   // Đăng xuất người dùng
   async logout(userId: string) {
-    await this.usersRepository.updateRefreshToken(userId, null);
-    return apiSuccess(200, null, 'Logged out successfully.');
+    try {
+      await this.usersRepository.updateRefreshToken(userId, null);
+      return apiSuccess(200, null, 'Logged out successfully.');
+    } catch (error: unknown) {
+      this.logger.error(`Logout failed: ${(error as Error).message}`);
+      throw new HttpException('Logout failed.', HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+  }
+
+  // Xác minh token của Admin
+  async verifyAdminToken(token: string) {
+    try {
+      const decoded = this.jwtService.verify(token);
+      if (decoded.role !== Roles.Admin) {
+        throw new UnauthorizedException('Invalid admin token.');
+      }
+      return decoded;
+    } catch (error: unknown) {
+      this.logger.error(`Admin token verification failed: ${(error as Error).message}`);
+      throw new UnauthorizedException('Invalid token.');
+    }
+  }
+
+  // Xác minh token chung
+  async verifyToken(token: string) {
+    try {
+      return this.jwtService.verify(token);
+    } catch (error: unknown) {
+      this.logger.error(`Token verification failed: ${(error as Error).message}`);
+      throw new UnauthorizedException('Invalid token.');
+    }
+  }
+
+  // Giải mã token
+  async decodeToken(token: string) {
+    try {
+      return this.jwtService.decode(token);
+    } catch (error: unknown) {
+      this.logger.error(`Token decoding failed: ${(error as Error).message}`);
+      throw new HttpException('Invalid token.', HttpStatus.UNAUTHORIZED);
+    }
   }
 }
