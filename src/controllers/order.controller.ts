@@ -1,64 +1,65 @@
 import {
   Controller,
   Post,
-  Body,
-  Put,
+  Patch,
   Param,
-  HttpException,
+  Body,
+  Get,
   HttpStatus,
+  UseGuards,
 } from '@nestjs/common';
-import { CreateBuyOrderDto } from '../dto/order/create-buy-order.dto';
-import { ApiTags, ApiResponse, ApiBody } from '@nestjs/swagger';
 import { OrderService } from 'src/services/order.service';
+import { CreateBuyOrderDto } from 'src/dto/order/create-buy-order.dto';
+import { RolesGuard } from 'src/configs/auth/guards/roles.guard';
+import { JwtAuthGuard } from 'src/configs/auth/strategy/jwt-auth.guard';
+import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 
-@ApiTags('Order')
+@ApiTags('Orders') // Grouping APIs under 'Orders' in Swagger
 @Controller('orders')
+@UseGuards(JwtAuthGuard) // JWT authentication required for all endpoints
 export class OrderController {
   constructor(private readonly orderService: OrderService) {}
 
-  @Post('buy')
-  @ApiBody({ type: CreateBuyOrderDto })
-  @ApiResponse({ status: 201, description: 'Order created successfully.' })
-  @ApiResponse({ status: 400, description: 'Product unavailable.' })
-  async createBuyOrder(@Body() createBuyOrderDto: CreateBuyOrderDto) {
-    try {
-      const order = await this.orderService.createBuyOrder(createBuyOrderDto);
-
-      if (!createBuyOrderDto.userId) {
-        await this.orderService.scheduleReminder(order.id);
-      }
-
-      return { status: 201, data: order };
-    } catch (error: unknown) {
-      if (error instanceof Error) {
-        throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
-      }
-      throw new HttpException(
-        'Unexpected error.',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
-    }
+  @Post('guest-order')
+  @ApiOperation({ summary: 'Create order as guest' })
+  @ApiResponse({
+    status: HttpStatus.CREATED,
+    description: 'Guest order created successfully.',
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'Invalid product or insufficient stock.',
+  })
+  async createGuestOrder(@Body() createBuyOrderDto: CreateBuyOrderDto) {
+    return this.orderService.createBuyOrder(createBuyOrderDto);
   }
 
-  @Put(':id/status')
-  async updateOrderStatus(
-    @Param('id') id: string,
+  @Patch(':id/status')
+  @ApiOperation({ summary: 'Update order status' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Order status successfully updated.',
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'Invalid status or unauthorized action.',
+  })
+  @UseGuards(RolesGuard) // Ensure only authorized roles can change status
+  async updateStatus(
+    @Param('id') orderId: string,
     @Body('status') status: string,
+    @Body('role') role: string, // User or Supplier making the request
   ) {
-    try {
-      const updatedOrder = await this.orderService.updateOrderStatus(
-        id,
-        status,
-      );
-      return { status: 200, data: updatedOrder };
-    } catch (error: unknown) {
-      if (error instanceof Error) {
-        throw new HttpException(error.message, HttpStatus.BAD_REQUEST);
-      }
-      throw new HttpException(
-        'Unexpected error.',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
-    }
+    return this.orderService.updateOrderStatus(orderId, status, role);
+  }
+
+  @Get('cancel-expired')
+  @ApiOperation({ summary: 'Cancel expired guest orders' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Expired orders successfully canceled.',
+  })
+  async cancelExpiredOrders() {
+    return this.orderService.cancelUnregisteredOrders();
   }
 }

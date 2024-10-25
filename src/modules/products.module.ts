@@ -7,6 +7,6 @@ import { ProductsService } from '../services/products.service';
 @Module({
   controllers: [ProductsController],
   providers: [ProductsService, ProductsRepository, PrismaService],
-  exports: [ProductsRepository], // Export ProductsRepository để dùng trong RentalModule
+  exports: [ProductsRepository],
 })
 export class ProductsModule {}

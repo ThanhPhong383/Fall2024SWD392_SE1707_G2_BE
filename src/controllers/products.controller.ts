@@ -17,8 +17,8 @@ import { ProductsService } from '../services/products.service';
 import { AuthenticatedRequest } from '../types/express-request.interface';
 import { ApiTags, ApiBearerAuth, ApiQuery, ApiResponse } from '@nestjs/swagger';
 
-@ApiTags('Products') // Swagger API tag để nhóm các endpoint
-@ApiBearerAuth() // Đánh dấu API này cần xác thực bằng Bearer token
+@ApiTags('Products')
+@ApiBearerAuth()
 @Controller('products')
 export class ProductsController {
   constructor(private readonly productsService: ProductsService) {}
@@ -55,7 +55,7 @@ export class ProductsController {
   @UseGuards(JwtAuthGuard)
   @Put(':id')
   @ApiResponse({ status: 200, description: 'Product updated successfully.' })
-  @ApiResponse({ status: 403, description: 'Unauthorized.' })
+  @ApiResponse({ status: 403, description: 'Unauthorized to update product.' })
   @ApiResponse({ status: 404, description: 'Product not found.' })
   async updateProduct(
     @Param('id') id: string,
@@ -75,7 +75,7 @@ export class ProductsController {
   @UseGuards(JwtAuthGuard)
   @Delete(':id')
   @ApiResponse({ status: 200, description: 'Product deleted successfully.' })
-  @ApiResponse({ status: 403, description: 'Unauthorized.' })
+  @ApiResponse({ status: 403, description: 'Unauthorized to delete product.' })
   @ApiResponse({ status: 404, description: 'Product not found.' })
   async removeProduct(
     @Param('id') id: string,
@@ -91,11 +91,22 @@ export class ProductsController {
     return this.productsService.remove(id);
   }
 
+  @UseGuards(JwtAuthGuard)
+  @Put(':id/quantity')
+  @ApiResponse({ status: 200, description: 'Quantity updated successfully.' })
+  @ApiResponse({ status: 404, description: 'Product not found.' })
+  async updateQuantity(
+    @Param('id') id: string,
+    @Body('quantity') quantity: number,
+  ) {
+    return this.productsService.updateQuantity(id, quantity);
+  }
+
   @Get('search')
   @ApiQuery({
     name: 'name',
     required: true,
-    description: 'Product name to search for',
+    description: 'Product name to search for.',
   })
   @ApiResponse({ status: 200, description: 'Product(s) found.' })
   @ApiResponse({
@@ -103,12 +114,9 @@ export class ProductsController {
     description: 'No products found with the given name.',
   })
   async searchProductByName(@Query('name') name: string) {
-    if (!name) {
-      throw new NotFoundException('Product name query is required');
-    }
-    const products = await this.productsService.findByName(name);
+    const products = await this.productsService.findProductByName(name);
     if (products.length === 0) {
-      throw new NotFoundException('No products found with the given name');
+      throw new NotFoundException(`No products found matching "${name}".`);
     }
     return products;
   }

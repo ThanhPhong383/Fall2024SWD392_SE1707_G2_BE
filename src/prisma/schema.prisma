@@ -31,6 +31,7 @@ model Products {
   name        String      @db.VarChar(100)
   description String
   price       Decimal     @db.Decimal(15, 2)
+  quantity    Int       // Đảm bảo trường quantity
   category    String      @db.VarChar(50)
   isAvailable Boolean     @default(true)
   supplierId  String      @db.VarChar(36)

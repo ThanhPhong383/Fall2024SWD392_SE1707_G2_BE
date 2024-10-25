@@ -1,4 +1,10 @@
-import { IsString, IsNotEmpty, IsNumber } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  Min,
+} from 'class-validator';
 
 export class CreateProductDto {
   @IsString()
@@ -10,9 +16,15 @@ export class CreateProductDto {
   price!: number;
 
   @IsString()
-  description!: string;
+  @IsOptional()
+  description!: string; // Description là optional
 
   @IsString()
   @IsNotEmpty()
-  category!: string; // Thêm trường category
+  category!: string; // Category là bắt buộc
+
+  @IsNumber()
+  @Min(0, { message: 'Quantity must be 0 or more.' })
+  @IsOptional()
+  quantity!: number; // Thêm quantity, bắt buộc
 }

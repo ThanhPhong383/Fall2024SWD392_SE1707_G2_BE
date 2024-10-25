@@ -1,4 +1,3 @@
-/* eslint-disable prettier/prettier */
 import { Injectable } from '@nestjs/common';
 import { Users } from 'prisma-client';
 import { CreateUserDto } from 'src/dto/users/create-user.dto';
@@ -8,14 +7,12 @@ import { PrismaService } from 'src/system/database/prisma.service';
 export class UsersRepository {
   constructor(private readonly prismaService: PrismaService) {}
 
-  // Cập nhật thông tin user (bao gồm cập nhật role)
   async updateUserRole(userId: string, role: string): Promise<Users> {
     return this.prismaService.users.update({
       where: { id: userId },
       data: { role },
     });
   }
-
   async createUser(createUserDto: CreateUserDto): Promise<Users> {
     return this.prismaService.users.create({ data: createUserDto });
   }
@@ -33,18 +30,26 @@ export class UsersRepository {
   }
 
   async updateUser(id: string, updateUserDto: object): Promise<Users> {
-    return this.prismaService.users.update({ where: { id }, data: updateUserDto });
+    return this.prismaService.users.update({
+      where: { id },
+      data: updateUserDto,
+    });
   }
 
   async deleteUser(id: string): Promise<Users> {
     return this.prismaService.users.delete({ where: { id } });
   }
 
-  async updateRefreshToken(id: string, refreshToken: string | null): Promise<Users> {
-    return this.prismaService.users.update({ where: { id }, data: { refreshToken } });
+  async updateRefreshToken(
+    id: string,
+    refreshToken: string | null,
+  ): Promise<Users> {
+    return this.prismaService.users.update({
+      where: { id },
+      data: { refreshToken },
+    });
   }
 
-  // Kiểm tra xem user có đơn hàng chờ xử lý không
   async hasPendingOrders(userId: string): Promise<boolean> {
     const pendingOrders = await this.prismaService.orders.findMany({
       where: { userId, status: 'Pending' },

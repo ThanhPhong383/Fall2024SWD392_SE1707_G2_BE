@@ -1,4 +1,10 @@
-import { IsString, IsNumber, IsOptional, IsBoolean } from 'class-validator';
+import {
+  IsString,
+  IsNumber,
+  IsOptional,
+  IsBoolean,
+  IsInt,
+} from 'class-validator';
 
 export class UpdateProductDto {
   @IsOptional()
@@ -16,6 +22,10 @@ export class UpdateProductDto {
   @IsOptional()
   @IsString()
   category?: string;
+
+  @IsOptional()
+  @IsInt()
+  quantity?: number; // Thêm trường quantity
 
   @IsOptional()
   @IsBoolean()
