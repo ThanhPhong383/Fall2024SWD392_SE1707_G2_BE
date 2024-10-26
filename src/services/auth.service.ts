@@ -23,34 +23,35 @@ export class AuthService {
   async register(registerDto: RegisterDto) {
     try {
       const { email, password, firstName, lastName, role } = registerDto;
-
+  
       if (![Roles.User, Roles.Supplier].includes(role)) {
         throw new HttpException('Invalid role! Must be User or Supplier.', HttpStatus.BAD_REQUEST);
       }
-
+  
       const existingUser = await this.usersRepository.findUserByEmail(email);
       if (existingUser) {
         throw new HttpException('Email already exists!', HttpStatus.BAD_REQUEST);
       }
-
+  
       const hashedPassword = await bcrypt.hash(password, 10);
-      await this.usersRepository.createUser({
+  
+      // Chuyển logic thêm createdDate vào repository
+      const user = await this.usersRepository.createUser({
         email,
         password: hashedPassword,
         firstName,
         lastName,
         role,
         isActive: true,
-        createdDate: new Date().toISOString(),
       });
-
-      return apiSuccess(201, null, 'User registered successfully.');
+  
+      return apiSuccess(201, user, 'User registered successfully.');
     } catch (error: unknown) {
       this.logger.error(`Registration failed: ${(error as Error).message}`);
       throw new HttpException('Registration failed.', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
-
+  
   // Đăng nhập người dùng
   async login(loginDto: LoginDto) {
     try {

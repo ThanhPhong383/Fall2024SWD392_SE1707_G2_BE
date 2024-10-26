@@ -14,7 +14,32 @@ export class UsersRepository {
     });
   }
   async createUser(createUserDto: CreateUserDto): Promise<Users> {
-    return this.prismaService.users.create({ data: createUserDto });
+    const {
+      firstName,
+      lastName,
+      email,
+      password,
+      phone,
+      dateOfBirth,
+      address,
+      role,
+      isActive,
+    } = createUserDto;
+
+    return this.prismaService.users.create({
+      data: {
+        firstName,
+        lastName,
+        email,
+        password,
+        phone,
+        dateOfBirth,
+        address,
+        role,
+        isActive,
+        createdDate: new Date().toISOString(), // Thêm createdDate
+      },
+    });
   }
 
   async findAllUsers(): Promise<Users[]> {

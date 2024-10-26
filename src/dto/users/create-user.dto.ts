@@ -1,4 +1,3 @@
-import { Datetime, Email } from '../../system/validation-tags';
 import {
   IsString,
   IsBoolean,
@@ -10,7 +9,7 @@ import {
 
 export class CreateUserDto {
   @IsString()
-  firstName!: string; // Non-null assertion
+  firstName!: string;
 
   @IsString()
   lastName!: string;
@@ -19,15 +18,15 @@ export class CreateUserDto {
   isActive: boolean = true;
 
   @IsEmail()
-  email!: Email; // Non-null assertion vì email sẽ luôn được cung cấp
+  email!: string;
 
   @IsOptional()
-  @IsPhoneNumber(undefined) // Thay null bằng undefined
+  @IsPhoneNumber(undefined)
   phone?: string;
 
   @IsOptional()
   @IsDateString()
-  dateOfBirth?: Datetime;
+  dateOfBirth?: string;
 
   @IsOptional()
   @IsString()
@@ -37,8 +36,5 @@ export class CreateUserDto {
   role: string = 'user';
 
   @IsString()
-  password!: string; // Non-null assertion vì bắt buộc
-
-  @IsDateString()
-  createdDate!: Datetime; // Non-null assertion vì luôn được gán
+  password!: string;
 }

@@ -31,21 +31,27 @@ import { AuthenticatedRequest } from 'src/types/express-request.interface';
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
-  @Get('/')
-  @ApiOperation({ summary: 'Root route for health check' })
-  @ApiResponse({
-    status: HttpStatus.OK,
-    description: 'Service is live!',
-  })
-  getRoot() {
-    return { message: 'Welcome to the NestJS API! Your service is live 🎉' };
-  }
   // Đăng ký từ Customer thành User
   @Post('register')
   @ApiOperation({ summary: 'Register a new user' })
   @ApiResponse({ status: 201, description: 'User successfully registered.' })
+  @ApiResponse({ status: 400, description: 'Bad request.' })
   async register(@Body() createUserDto: CreateUserDto) {
-    return this.usersService.create(createUserDto);
+    try {
+      const user = await this.usersService.create(createUserDto);
+      return {
+        statusCode: 201,
+        message: 'User successfully registered.',
+        data: user,
+      };
+    } catch (error) {
+      const err = error as Error; // Ép kiểu 'unknown' thành 'Error'
+      console.error(`Error during registration: ${err.message}`); // Log lỗi chi tiết
+      throw new HttpException(
+        'Registration failed.',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
   }
 
   @Get()

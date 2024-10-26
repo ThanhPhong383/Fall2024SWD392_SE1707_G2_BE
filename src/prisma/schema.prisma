@@ -10,7 +10,7 @@ datasource db {
 }
 
 model Users {
-  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid  //tạo tự động
   firstName    String?   @db.VarChar(100)
   lastName     String?   @db.VarChar(100)
   email        String    @unique @db.VarChar(150)
@@ -21,8 +21,8 @@ model Users {
   isActive     Boolean   @default(true)
   role         String    @db.VarChar(20)
   refreshToken String?   @db.VarChar(255)
-  createdDate  DateTime? @db.Timestamptz(6)
-  updatedDate  DateTime? @db.Timestamptz(6)
+  createdDate  DateTime? @default(now()) @db.Timestamptz(6) //tạo tự động, lấy từ hệ thống vào thời điểm tạo tài khoản mới
+  updatedDate  DateTime? @updatedAt @db.Timestamptz(6) //tạo tự động, lấy từ hệ thống vào thời điểm sửa tài khoản 
   orders       Orders[]  @relation("UserOrders")
 }
 
