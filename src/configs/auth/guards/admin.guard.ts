@@ -3,7 +3,6 @@ import {
   CanActivate,
   ExecutionContext,
   UnauthorizedException,
-  ForbiddenException,
 } from '@nestjs/common';
 import { AuthService } from '../../../services/auth.service';
 
@@ -19,21 +18,23 @@ export class AdminGuard implements CanActivate {
       throw new UnauthorizedException('Authorization header is missing');
     }
 
-    const accessToken = authorizationHeader.split(' ')[1];
-    if (!accessToken) {
+    const token = authorizationHeader.split(' ')[1];
+    if (!token) {
       throw new UnauthorizedException('Access token is missing');
     }
 
     try {
-      const decodedToken = await this.authService.verifyAdminToken(accessToken);
-      if (!decodedToken || decodedToken.role !== 'Admin') {
-        throw new ForbiddenException('User is not an admin');
+      const decoded = await this.authService.verifyToken(token);
+
+      if (!decoded || decoded.role !== 'admin') {
+        throw new UnauthorizedException('Admin rights required');
       }
-      request.user = decodedToken; // Gắn thông tin user vào request
+
+      request.user = decoded; // Lưu thông tin người dùng vào request
       return true;
     } catch (error) {
-      console.error('Token verification failed:', error); // Ghi log lỗi
-      throw new UnauthorizedException('Invalid or expired token');
+      console.error('Token verification error:', error);
+      throw new UnauthorizedException('Token verification failed');
     }
   }
 }
