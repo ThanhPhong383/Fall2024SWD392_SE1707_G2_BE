@@ -2,11 +2,14 @@ import {
   Injectable,
   ForbiddenException,
   NotFoundException,
+  HttpException,
+  HttpStatus,
 } from '@nestjs/common';
 import { UsersRepository } from 'src/repositories/users.repository';
 import { ProductsRepository } from 'src/repositories/products.repository';
 import { CreateUserDto } from 'src/dto/users/create-user.dto';
 import { Users } from 'prisma-client';
+import * as bcrypt from 'bcryptjs';
 
 @Injectable()
 export class UsersService {
@@ -15,11 +18,40 @@ export class UsersService {
     private readonly productsRepository: ProductsRepository,
   ) {}
 
-  // Tạo mới người dùng
+  // Tạo mới người dùng với kiểm tra email và băm mật khẩu
   async create(createUserDto: CreateUserDto): Promise<Users> {
-    return this.usersRepository.createUser(createUserDto);
-  }
+    try {
+      const { email, password, ...otherDetails } = createUserDto;
 
+      // Kiểm tra email trùng lặp
+      const existingUser = await this.usersRepository.findUserByEmail(email);
+      if (existingUser) {
+        throw new HttpException(
+          'Email already exists!',
+          HttpStatus.BAD_REQUEST,
+        );
+      }
+
+      // Băm mật khẩu với độ khó 10 vòng
+      const hashedPassword = await bcrypt.hash(password, 10);
+
+      // Tạo mới người dùng với thông tin đã băm và các chi tiết khác
+      const newUser = await this.usersRepository.createUser({
+        ...otherDetails,
+        email,
+        password: hashedPassword,
+        role: 'user', // Gán mặc định quyền 'user'
+      });
+
+      return newUser;
+    } catch (error) {
+      console.error(`Error creating user: ${(error as Error).message}`);
+      throw new HttpException(
+        'User creation failed.',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
   // Lấy tất cả người dùng
   async findAllUsers() {
     return this.usersRepository.findAllUsers();
