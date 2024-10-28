@@ -5,13 +5,12 @@ import {
   Get,
   Param,
   Patch,
-  Post,
   Put,
   Req,
   UseGuards,
-  ForbiddenException,
   HttpException,
   HttpStatus,
+  Query,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -22,37 +21,14 @@ import {
 import { UsersService } from 'src/services/users.service';
 import { AdminGuard } from 'src/configs/auth/guards/admin.guard';
 import { UserGuard } from 'src/configs/auth/guards/user.guard';
-import { CreateUserDto } from 'src/dto/users/create-user.dto';
 import { UpdateUserDto } from 'src/dto/users/update-user.dto';
 import { AuthenticatedRequest } from 'src/types/express-request.interface';
 
-@ApiTags('Users') // Grouping for Swagger
-@ApiBearerAuth() // JWT Authentication required
+@ApiTags('Users')
+@ApiBearerAuth()
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
-  // Đăng ký từ Customer thành User
-  @Post('register')
-  @ApiOperation({ summary: 'Register a new user' })
-  @ApiResponse({ status: 201, description: 'User successfully registered.' })
-  @ApiResponse({ status: 400, description: 'Bad request.' })
-  async register(@Body() createUserDto: CreateUserDto) {
-    try {
-      const user = await this.usersService.create(createUserDto);
-      return {
-        statusCode: 201,
-        message: 'User successfully registered.',
-        data: user,
-      };
-    } catch (error) {
-      const err = error as Error; // Ép kiểu 'unknown' thành 'Error'
-      console.error(`Error during registration: ${err.message}`); // Log lỗi chi tiết
-      throw new HttpException(
-        'Registration failed.',
-        HttpStatus.INTERNAL_SERVER_ERROR,
-      );
-    }
-  }
 
   @Get()
   @ApiOperation({ summary: 'Get all users' })
@@ -60,85 +36,94 @@ export class UsersController {
     status: 200,
     description: 'All users retrieved successfully.',
   })
-  @UseGuards(AdminGuard) // Chỉ Admin được xem tất cả người dùng
+  @UseGuards(AdminGuard)
   findAll() {
     return this.usersService.findAllUsers();
   }
 
-  @Get(':id')
-  @ApiOperation({ summary: 'Get user by ID' })
-  @ApiResponse({ status: 200, description: 'User details retrieved.' })
-  @ApiResponse({ status: 403, description: 'Access denied.' })
-  @UseGuards(UserGuard) // Chỉ người dùng hoặc Admin có thể xem chi tiết
-  findOne(@Param('id') id: string, @Req() req: AuthenticatedRequest) {
-    if (id !== req.user.userId && req.user.role !== 'Admin') {
-      throw new ForbiddenException('Access denied!');
+  @Get('search')
+  @ApiOperation({ summary: 'Search users by name' })
+  @ApiResponse({ status: 200, description: 'Users found successfully.' })
+  @ApiResponse({ status: 404, description: 'No users found.' })
+  async searchByName(@Query('name') name: string) {
+    const users = await this.usersService.findByName(name);
+    if (!users || users.length === 0) {
+      throw new HttpException('No users found.', HttpStatus.NOT_FOUND);
     }
-    return this.usersService.findUserById(id);
+    return users;
   }
 
-  // Nâng cấp vai trò: Chỉ Admin
-  @Patch(':id/role')
-  @ApiOperation({ summary: 'Update user role' })
-  @ApiResponse({ status: 200, description: 'User role updated successfully.' })
-  @ApiResponse({ status: 400, description: 'Invalid role transition.' })
-  @UseGuards(AdminGuard)
-  async updateRole(@Param('id') id: string, @Body('role') role: string) {
-    if (!['Admin', 'Supplier'].includes(role)) {
-      throw new HttpException(
-        'Invalid role transition.',
-        HttpStatus.BAD_REQUEST,
-      );
-    }
-    return this.usersService.updateRole(id, role);
-  }
-
-  // Supplier tự hạ cấp thành User nếu không có đơn hàng đang xử lý
-  @Patch(':id/downgrade')
-  @ApiOperation({ summary: 'Downgrade supplier to user' })
-  @ApiResponse({ status: 200, description: 'Supplier downgraded to user.' })
-  @ApiResponse({
-    status: 400,
-    description: 'Cannot downgrade with active orders.',
-  })
+  @Get('profile')
+  @ApiOperation({ summary: 'View personal profile' })
+  @ApiResponse({ status: 200, description: 'Profile retrieved successfully.' })
   @UseGuards(UserGuard)
-  async downgradeToUser(@Param('id') id: string) {
-    const hasPendingOrders = await this.usersService.hasPendingOrders(id);
-    if (hasPendingOrders) {
-      throw new HttpException(
-        'Cannot downgrade with active orders.',
-        HttpStatus.BAD_REQUEST,
-      );
-    }
-    return this.usersService.updateRole(id, 'User');
-  }
-
-  @Put(':id')
-  @ApiOperation({ summary: 'Update user details' })
-  @ApiResponse({ status: 200, description: 'User updated successfully.' })
-  @UseGuards(AdminGuard) // Chỉ Admin được phép cập nhật thông tin người dùng
-  update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
-    return this.usersService.update(id, updateUserDto);
+  async viewProfile(@Req() req: AuthenticatedRequest) {
+    const { userId } = req.user;
+    return this.usersService.findUserById(userId);
   }
 
   @Patch('profile')
-  @ApiOperation({ summary: 'Update user profile' })
-  @ApiResponse({
-    status: 200,
-    description: 'User profile updated successfully.',
-  })
+  @ApiOperation({ summary: 'Update personal profile' })
+  @ApiResponse({ status: 200, description: 'Profile updated successfully.' })
   @UseGuards(UserGuard)
-  updateProfile(
+  async updateProfile(
     @Req() req: AuthenticatedRequest,
     @Body() updateUserDto: UpdateUserDto,
   ) {
     return this.usersService.update(req.user.userId, updateUserDto);
   }
 
+  @Patch('profile/downgrade')
+  @ApiOperation({ summary: 'Downgrade to User' })
+  @ApiResponse({ status: 200, description: 'Downgraded to User successfully.' })
+  @UseGuards(UserGuard)
+  async downgradeToUser(@Req() req: AuthenticatedRequest) {
+    const { userId } = req.user;
+    const hasPendingOrders = await this.usersService.hasPendingOrders(userId);
+    if (hasPendingOrders) {
+      throw new HttpException(
+        'Cannot downgrade with active orders.',
+        HttpStatus.BAD_REQUEST,
+      );
+    }
+    return this.usersService.updateRole(userId, 'User');
+  }
+
+  @Patch('profile/upgrade')
+  @ApiOperation({ summary: 'Upgrade to Supplier' })
+  @ApiResponse({
+    status: 200,
+    description: 'Upgraded to Supplier successfully.',
+  })
+  @UseGuards(UserGuard)
+  async upgradeToSupplier(@Req() req: AuthenticatedRequest) {
+    const { userId } = req.user;
+    return this.usersService.requestSupplierRole(userId);
+  }
+
+  @Patch(':id/upgrade-to-supplier')
+  @ApiOperation({ summary: 'Admin upgrades user to Supplier' })
+  @ApiResponse({
+    status: 200,
+    description: 'User upgraded to Supplier successfully.',
+  })
+  @UseGuards(AdminGuard)
+  async upgradeToSupplierByAdmin(@Param('id') id: string) {
+    return this.usersService.requestSupplierRole(id, true);
+  }
+
+  @Put(':id')
+  @ApiOperation({ summary: 'Update user details' })
+  @ApiResponse({ status: 200, description: 'User updated successfully.' })
+  @UseGuards(AdminGuard)
+  update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
+    return this.usersService.update(id, updateUserDto);
+  }
+
   @Delete(':id')
   @ApiOperation({ summary: 'Delete user' })
   @ApiResponse({ status: 200, description: 'User deleted successfully.' })
-  @UseGuards(AdminGuard) // Chỉ Admin được phép xóa người dùng
+  @UseGuards(AdminGuard)
   remove(@Param('id') id: string) {
     return this.usersService.remove(id);
   }

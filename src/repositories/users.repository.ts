@@ -49,7 +49,17 @@ export class UsersRepository {
   async findUserById(id: string): Promise<Users | null> {
     return this.prismaService.users.findUnique({ where: { id } });
   }
-
+  // Tìm người dùng theo tên
+  async findUsersByName(name: string) {
+    return this.prismaService.users.findMany({
+      where: {
+        OR: [
+          { firstName: { contains: name, mode: 'insensitive' } },
+          { lastName: { contains: name, mode: 'insensitive' } },
+        ],
+      },
+    });
+  }
   async findUserByEmail(email: string): Promise<Users | null> {
     return this.prismaService.users.findFirst({ where: { email } });
   }
