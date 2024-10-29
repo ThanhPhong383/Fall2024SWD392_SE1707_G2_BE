@@ -28,29 +28,29 @@ export class ProductsRepository {
     return this.prismaService.products.findMany();
   }
 
-  async findProductById(id: string) {
+  async findProductById(id: number) {
     return this.prismaService.products.findUnique({ where: { id } });
   }
 
-  async updateProductStock(productId: string, quantity: number) {
+  async updateProductStock(productId: number, quantity: number) {
     return this.prismaService.products.update({
       where: { id: productId },
       data: { quantity },
     });
   }
 
-  async updateProduct(id: string, updateProductDto: UpdateProductDto) {
+  async updateProduct(id: number, updateProductDto: UpdateProductDto) {
     return this.prismaService.products.update({
       where: { id },
       data: updateProductDto,
     });
   }
 
-  async deleteProduct(id: string) {
+  async deleteProduct(id: number) {
     return this.prismaService.products.delete({ where: { id } });
   }
 
-  async updateQuantity(id: string, quantity: number) {
+  async updateQuantity(id: number, quantity: number) {
     const isAvailable = quantity > 0;
     return this.prismaService.products.update({
       where: { id },
@@ -64,7 +64,7 @@ export class ProductsRepository {
     });
   }
 
-  async findOrdersByProduct(productId: string) {
+  async findOrdersByProduct(productId: number) {
     return this.prismaService.orderItem.findMany({ where: { productId } });
   }
 }

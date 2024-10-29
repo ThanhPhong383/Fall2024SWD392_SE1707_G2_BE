@@ -81,7 +81,7 @@ export class ProductsController {
   @Get(':id')
   @ApiResponse({ status: 200, description: 'Product retrieved successfully.' })
   @ApiResponse({ status: 404, description: 'Product not found.' })
-  async findOne(@Param('id') id: string) {
+  async findOne(@Param('id') id: number) {
     const product = await this.productsService.findOne(id);
     if (!product) {
       throw new NotFoundException('Product not found');
@@ -95,7 +95,7 @@ export class ProductsController {
   @ApiResponse({ status: 403, description: 'Unauthorized to update product.' })
   @ApiResponse({ status: 404, description: 'Product not found.' })
   async updateProduct(
-    @Param('id') id: string,
+    @Param('id') id: number,
     @Body() productDto: any,
     @Req() req: AuthenticatedRequest,
   ) {
@@ -115,7 +115,7 @@ export class ProductsController {
   @ApiResponse({ status: 403, description: 'Unauthorized to delete product.' })
   @ApiResponse({ status: 404, description: 'Product not found.' })
   async removeProduct(
-    @Param('id') id: string,
+    @Param('id') id: number,
     @Req() req: AuthenticatedRequest,
   ) {
     const product = await this.productsService.findOne(id);
@@ -133,7 +133,7 @@ export class ProductsController {
   @ApiResponse({ status: 200, description: 'Quantity updated successfully.' })
   @ApiResponse({ status: 404, description: 'Product not found.' })
   async updateQuantity(
-    @Param('id') id: string,
+    @Param('id') id: number,
     @Body('quantity') quantity: number,
   ) {
     return this.productsService.updateQuantity(id, quantity);

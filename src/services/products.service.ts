@@ -19,7 +19,7 @@ export class ProductsService {
     return this.productsRepository.findAllProducts();
   }
 
-  async findOne(id: string) {
+  async findOne(id: number) {
     const product = await this.productsRepository.findProductById(id);
     if (!product) {
       throw new NotFoundException('Product not found');
@@ -27,7 +27,7 @@ export class ProductsService {
     return product;
   }
 
-  async update(id: string, updateProductDto: UpdateProductDto) {
+  async update(id: number, updateProductDto: UpdateProductDto) {
     const product = await this.productsRepository.findProductById(id);
     if (!product) {
       throw new NotFoundException('Product not found');
@@ -35,7 +35,7 @@ export class ProductsService {
     return this.productsRepository.updateProduct(id, updateProductDto);
   }
 
-  async remove(id: string) {
+  async remove(id: number) {
     const hasActiveOrders = await this.hasActiveOrders(id);
     if (hasActiveOrders) {
       throw new ForbiddenException('Cannot delete product with active orders.');
@@ -43,7 +43,7 @@ export class ProductsService {
     return this.productsRepository.deleteProduct(id);
   }
 
-  async updateQuantity(id: string, quantity: number) {
+  async updateQuantity(id: number, quantity: number) {
     const product = await this.productsRepository.findProductById(id);
     if (!product) {
       throw new NotFoundException('Product not found');
@@ -51,7 +51,7 @@ export class ProductsService {
     return this.productsRepository.updateQuantity(id, quantity);
   }
 
-  private async hasActiveOrders(productId: string): Promise<boolean> {
+  private async hasActiveOrders(productId: number): Promise<boolean> {
     const orders = await this.productsRepository.findOrdersByProduct(productId);
     return orders.length > 0;
   }
