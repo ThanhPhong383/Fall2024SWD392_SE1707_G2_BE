@@ -32,8 +32,9 @@ export class CreateUserDto {
   @IsString()
   address?: string;
 
+  @IsOptional()
   @IsString()
-  role: string = 'user';
+  role: string = 'User'; // Gán mặc định 'User'
 
   @IsString()
   password!: string;

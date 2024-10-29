@@ -109,7 +109,7 @@ export class UsersController {
   })
   @UseGuards(AdminGuard)
   async upgradeToSupplierByAdmin(@Param('id') id: string) {
-    return this.usersService.requestSupplierRole(id, true);
+    return this.usersService.requestSupplierRole(id);
   }
 
   @Put(':id')

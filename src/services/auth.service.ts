@@ -3,7 +3,7 @@ import { Injectable, UnauthorizedException, Logger, HttpException, HttpStatus } 
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
 import { LoginDto } from '../dto/auth/login.dto';
-import { RegisterDto } from '../dto/auth/register.dto';
+import { CreateUserDto } from 'src/dto/users/create-user.dto';
 import { apiSuccess } from 'src/dto/api-response';
 import { ConfigService } from '@nestjs/config';
 import { UsersRepository } from 'src/repositories/users.repository';
@@ -19,38 +19,39 @@ export class AuthService {
     private readonly config: ConfigService,
   ) {}
 
-  // Đăng ký tài khoản mới
-  async register(registerDto: RegisterDto) {
+  // Đăng ký người dùng mới với vai trò mặc định là 'User'
+  async register(CreateUserDto: CreateUserDto) {
     try {
-      const { email, password, firstName, lastName, role } = registerDto;
-  
-      if (![Roles.User, Roles.Supplier].includes(role)) {
-        throw new HttpException('Invalid role! Must be User or Supplier.', HttpStatus.BAD_REQUEST);
-      }
-  
+      const { email, password, firstName, lastName, role = Roles.User } =
+      CreateUserDto;
+
       const existingUser = await this.usersRepository.findUserByEmail(email);
       if (existingUser) {
         throw new HttpException('Email already exists!', HttpStatus.BAD_REQUEST);
       }
-  
+
       const hashedPassword = await bcrypt.hash(password, 10);
-  
-      // Chuyển logic thêm createdDate vào repository
+
+      // Tạo người dùng mới với vai trò mặc định là 'User'
       const user = await this.usersRepository.createUser({
         email,
         password: hashedPassword,
         firstName,
         lastName,
-        role,
+        role, // Vai trò được truyền hoặc mặc định là 'User'
         isActive: true,
       });
-  
+
       return apiSuccess(201, user, 'User registered successfully.');
-    } catch (error: unknown) {
+    } catch (error) {
       this.logger.error(`Registration failed: ${(error as Error).message}`);
-      throw new HttpException('Registration failed.', HttpStatus.INTERNAL_SERVER_ERROR);
+      throw new HttpException(
+        'Registration failed.',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
     }
   }
+
   
   // Đăng nhập người dùng
   async login(loginDto: LoginDto) {

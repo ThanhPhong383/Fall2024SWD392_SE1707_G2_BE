@@ -13,7 +13,7 @@ async function createAdmin() {
       data: {
         firstName: 'Admin',
         lastName: 'User',
-        email: 'admin@example.com',
+        email: 'admin1@example.com',
         password: hashedPassword,
         phone: '0123456789',
         dateOfBirth: new Date('1990-01-01'),

@@ -9,13 +9,22 @@ import {
   Req,
   UseGuards,
   ForbiddenException,
+  HttpException,
+  HttpStatus,
   NotFoundException,
   Query,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../configs/auth/strategy/jwt-auth.guard';
 import { ProductsService } from '../services/products.service';
 import { AuthenticatedRequest } from '../types/express-request.interface';
-import { ApiTags, ApiBearerAuth, ApiQuery, ApiResponse } from '@nestjs/swagger';
+import { Roles } from 'src/types/roles.enum';
+import {
+  ApiTags,
+  ApiQuery,
+  ApiResponse,
+  ApiOperation,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 
 @ApiTags('Products')
 @ApiBearerAuth()
@@ -24,15 +33,40 @@ export class ProductsController {
   constructor(private readonly productsService: ProductsService) {}
 
   @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard)
   @Post()
+  @ApiOperation({ summary: 'Create a new product (Supplier only)' })
   @ApiResponse({ status: 201, description: 'Product created successfully.' })
-  @ApiResponse({ status: 403, description: 'Unauthorized.' })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden. Only suppliers allowed.',
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
   async createProduct(
     @Body() productDto: any,
     @Req() req: AuthenticatedRequest,
   ) {
-    const { userId } = req.user;
-    return this.productsService.create(productDto, userId);
+    const { userId, role } = req.user;
+
+    // Kiểm tra vai trò, chỉ cho phép Supplier
+    if (role !== Roles.Supplier) {
+      throw new ForbiddenException('Only suppliers can create products.');
+    }
+
+    try {
+      const product = await this.productsService.create(productDto, userId);
+      return {
+        statusCode: 201,
+        message: 'Product created successfully.',
+        data: product,
+      };
+    } catch (error) {
+      console.error(`Error creating product: ${(error as Error).message}`);
+      throw new HttpException(
+        'Failed to create product.',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
   }
 
   @Get()

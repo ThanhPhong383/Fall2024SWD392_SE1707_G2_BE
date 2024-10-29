@@ -11,7 +11,7 @@ import { UserGuard } from 'src/configs/auth/guards/user.guard';
 import { RolesGuard } from 'src/configs/auth/guards/roles.guard';
 import { Roles } from 'src/types/roles.enum';
 import { LoginDto } from 'src/dto/auth/login.dto';
-import { RegisterDto } from 'src/dto/auth/register.dto';
+import { CreateUserDto } from 'src/dto/users/create-user.dto';
 import { AuthService } from 'src/services/auth.service';
 import { AuthenticatedRequest } from 'src/types/express-request.interface';
 
@@ -22,8 +22,8 @@ export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Post('register')
-  async register(@Body() registerDto: RegisterDto) {
-    return this.authService.register(registerDto);
+  async register(@Body() CreateUserDto: CreateUserDto) {
+    return this.authService.register(CreateUserDto);
   }
 
   @Post('login')

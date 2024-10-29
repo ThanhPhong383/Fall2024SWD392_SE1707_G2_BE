@@ -65,7 +65,7 @@ export class UsersService {
     return this.usersRepository.updateUserRole(userId, role);
   }
 
-  async requestSupplierRole(userId: string, isAdmin: boolean = false) {
+  async requestSupplierRole(userId: string) {
     const user = await this.usersRepository.findUserById(userId);
     if (!user) {
       throw new NotFoundException(`User with ID ${userId} not found.`);
@@ -75,8 +75,7 @@ export class UsersService {
     if (hasPendingOrders) {
       throw new ForbiddenException('Cannot upgrade with active orders.');
     }
-    const newRole = isAdmin ? 'Supplier' : 'PendingSupplier';
-    return this.usersRepository.updateUserRole(userId, newRole);
+    return this.usersRepository.updateUserRole(userId, 'Supplier');
   }
 
   async remove(id: string) {

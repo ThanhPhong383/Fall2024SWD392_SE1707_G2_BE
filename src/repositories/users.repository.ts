@@ -13,31 +13,20 @@ export class UsersRepository {
       data: { role },
     });
   }
-  async createUser(createUserDto: CreateUserDto): Promise<Users> {
-    const {
-      firstName,
-      lastName,
-      email,
-      password,
-      phone,
-      dateOfBirth,
-      address,
-      role,
-      isActive,
-    } = createUserDto;
+  // Tạo người dùng với `createdDate` tự động
+  async createUser(createUserDto: CreateUserDto) {
+    const { email, password, firstName, lastName, role, isActive } =
+      createUserDto;
 
     return this.prismaService.users.create({
       data: {
-        firstName,
-        lastName,
         email,
         password,
-        phone,
-        dateOfBirth,
-        address,
+        firstName,
+        lastName,
         role,
         isActive,
-        createdDate: new Date().toISOString(), // Thêm createdDate
+        createdDate: new Date(), // Thêm createdDate tại đây
       },
     });
   }
