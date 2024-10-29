@@ -17,6 +17,7 @@ import {
 import { JwtAuthGuard } from '../configs/auth/strategy/jwt-auth.guard';
 import { ProductsService } from '../services/products.service';
 import { AuthenticatedRequest } from '../types/express-request.interface';
+import { CreateProductDto } from 'src/dto/products/create-product.dto';
 import { Roles } from 'src/types/roles.enum';
 import {
   ApiTags,
@@ -43,18 +44,20 @@ export class ProductsController {
   })
   @ApiResponse({ status: 401, description: 'Unauthorized.' })
   async createProduct(
-    @Body() productDto: any,
+    @Body() createProductDto: CreateProductDto,
     @Req() req: AuthenticatedRequest,
   ) {
     const { userId, role } = req.user;
 
-    // Kiểm tra vai trò, chỉ cho phép Supplier
     if (role !== Roles.Supplier) {
       throw new ForbiddenException('Only suppliers can create products.');
     }
 
     try {
-      const product = await this.productsService.create(productDto, userId);
+      const product = await this.productsService.create(
+        createProductDto,
+        userId,
+      );
       return {
         statusCode: 201,
         message: 'Product created successfully.',
