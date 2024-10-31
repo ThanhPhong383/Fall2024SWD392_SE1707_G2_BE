@@ -27,7 +27,7 @@ async function bootstrap() {
 
   app.enableCors({
     origin: [
-      'http://localhost:3001',
+      'http://localhost:3000',
       'https://fall2024-swd-392-se-1707-g2-fe.vercel.app',
     ],
     methods: 'GET, POST, PUT, PATCH, DELETE',
