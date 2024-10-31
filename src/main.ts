@@ -29,6 +29,7 @@ async function bootstrap() {
     origin: [
       'http://localhost:3000',
       'https://fall2024-swd-392-se-1707-g2-fe.vercel.app',
+      'https://fall2024swd392-se1707-g2-be-1.onrender.com',
     ],
     methods: 'GET, POST, PUT, PATCH, DELETE',
     allowedHeaders: 'Content-Type, Authorization',
