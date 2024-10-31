@@ -34,7 +34,6 @@ export class ProductsController {
   constructor(private readonly productsService: ProductsService) {}
 
   @UseGuards(JwtAuthGuard)
-  @UseGuards(JwtAuthGuard)
   @Post()
   @ApiOperation({ summary: 'Create a new product (Supplier only)' })
   @ApiResponse({ status: 201, description: 'Product created successfully.' })
