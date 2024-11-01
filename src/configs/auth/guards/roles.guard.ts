@@ -13,13 +13,17 @@ export class RolesGuard implements CanActivate {
   constructor(private readonly reflector: Reflector) {}
 
   canActivate(context: ExecutionContext): boolean {
+    console.log('Running RolesGuard...');
+
     const requiredRoles = this.reflector.get<Roles[]>(
       'roles',
       context.getHandler(),
     );
+    console.log(`Required roles for route: ${requiredRoles}`);
 
     // Nếu không yêu cầu vai trò cụ thể, cho phép truy cập.
     if (!requiredRoles || requiredRoles.length === 0) {
+      console.log('No specific roles required for this route.');
       return true;
     }
 
@@ -28,7 +32,11 @@ export class RolesGuard implements CanActivate {
 
     // Nếu không có thông tin người dùng (chưa đăng nhập), kiểm tra quyền Customer.
     if (!user) {
+      console.log('No user information found in request.');
       if (!requiredRoles.includes(Roles.Customer)) {
+        console.log(
+          `Access denied. User needs to log in and have one of the following roles: ${requiredRoles.join(', ')}`,
+        );
         throw new UnauthorizedException(
           'Access denied. Please login to access this resource.',
         );
@@ -40,11 +48,15 @@ export class RolesGuard implements CanActivate {
     const hasRole = requiredRoles.some((role) => user.roles?.includes(role));
 
     if (!hasRole) {
+      console.log(
+        `User does not have the required roles. User roles: ${user.roles}. Required roles: ${requiredRoles.join(', ')}`,
+      );
       throw new ForbiddenException(
         `Access denied. You need one of the following roles: ${requiredRoles.join(', ')}.`,
       );
     }
 
+    console.log(`Access granted to user: ${JSON.stringify(user)}`);
     return true;
   }
 }

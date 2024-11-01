@@ -15,7 +15,7 @@ import {
   Query,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../configs/auth/strategy/jwt-auth.guard';
-import { RolesGuard } from '../configs/auth/strategy/roles.guard'; // Thêm RolesGuard nếu bạn chưa có
+import { RolesGuard } from '../configs/auth/guards/roles.guard'; // Thêm RolesGuard nếu bạn chưa có
 import { ProductsService } from '../services/products.service';
 import { AuthenticatedRequest } from '../types/express-request.interface';
 import { CreateProductDto } from 'src/dto/products/create-product.dto';
@@ -27,8 +27,7 @@ import {
   ApiOperation,
   ApiBearerAuth,
 } from '@nestjs/swagger';
-import { Roles as RolesDecorator } from '../decorators/roles.decorator'; // Thêm decorator Roles nếu chưa có
-
+import { SetRoles } from '../types/roles.decorator'; // Thêm decorator Roles nếu chưa có
 @ApiTags('Products')
 @ApiBearerAuth()
 @Controller('products')
@@ -36,7 +35,7 @@ export class ProductsController {
   constructor(private readonly productsService: ProductsService) {}
 
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @RolesDecorator(Roles.Supplier) // Chỉ cho phép role Supplier
+  @SetRoles(Roles.Supplier) // Chỉ cho phép role Supplier
   @Post()
   @ApiOperation({ summary: 'Create a new product (Supplier only)' })
   @ApiResponse({ status: 201, description: 'Product created successfully.' })
@@ -56,7 +55,10 @@ export class ProductsController {
     }
 
     try {
-      const product = await this.productsService.create(createProductDto, userId);
+      const product = await this.productsService.create(
+        createProductDto,
+        userId,
+      );
       return {
         statusCode: 201,
         message: 'Product created successfully.',
